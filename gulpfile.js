@@ -18,6 +18,7 @@ var run = require('gulp-run');
 var chmod = require('gulp-chmod');
 var url = require('url');
 var extend = require('util')._extend;
+var changed = require('gulp-changed');
 
 var $ = require('gulp-load-plugins')();
 var del = require('del');
@@ -69,6 +70,7 @@ function project(extraLibs) {
 function tsPipeline(src, dst, extraLibs) {
     return function() {
         let build = gulp.src(src)
+            .pipe(changed(dst, {extension: '.js'}))
             .pipe(project(extraLibs));
 
 	return merge([
@@ -99,7 +101,7 @@ function tsTask(subdir, options) {
     });
 
     // run lint by default, but if lint is specified as 'false' skip it
-    if (!options.hasOwnProperty('lint') || options.lint)
+    if (options.lint)
         buildDeps = buildDeps.concat(['lint-'+subdir]);
 
     gulp.task('build-'+subdir, buildDeps, tsPipeline(sources, 'lib/'+subdir, options.extraLibs));
@@ -122,6 +124,7 @@ function tsTask(subdir, options) {
 
         return b.bundle()
             .pipe(source('./lib/'+subdir+'/'+subdir+'.js'))
+            .pipe(changed('./lib-dist/'))
             .pipe(buffer())
             .on('error', gutil.log)
             .pipe(gulp.dest('./lib-dist/'));
@@ -131,7 +134,9 @@ function tsTask(subdir, options) {
 gulp.task('copy-node-kernel', function() {
     return gulp.src([
         'node-modified/lib/binding/http_parser.js',
-    ]).pipe(copy('./lib/kernel/', {prefix: 3}));
+    ])
+    .pipe(changed('./lib/kernel/'))
+    .pipe(copy('./lib/kernel/', {prefix: 3}));
 });
 
 gulp.task('copy-node', function() {
@@ -171,7 +176,9 @@ gulp.task('copy-node', function() {
         'node/lib/_http_client.js',
         'node/lib/_http_server.js',
         'node/lib/http.js',
-    ]).pipe(copy('./lib/browser-node/', {prefix: 2}));
+    ])
+    .pipe(changed('./lib/browser-node/'))
+    .pipe(copy('./lib/browser-node/', {prefix: 2}));
 });
 
 // the kernel directly uses BrowserFS's typescript modules - we need
@@ -183,6 +190,12 @@ tsTask('bin');
 tsTask('syscall-api', {buildDeps: ['build-browser-node'], noGlobal: true});
 tsTask('hello-sync', {noGlobal: true});
 
+// create a lint task for browsix since it is removed by default during builds
+
+gulp.task('lint', ['lint-kernel', 'lint-browser-node', 'lint-bin', 'lint-syscall-api'], function() {
+    return gutil.noop();
+});
+
 // next, we need to collect the various pieces we've built, and put
 // then in a sane directory hierarchy.  There is no dist step needed
 // for our binaries - they are self contained and meant to be run
@@ -190,19 +203,23 @@ tsTask('hello-sync', {noGlobal: true});
 gulp.task('build-fs-pre', ['dist-kernel', 'dist-browser-node', 'build-bin', 'dist-syscall-api'], function() {
 
     var copyKernel = gulp.src('lib-dist/lib/kernel/kernel.js')
+          .pipe(changed('./fs/boot/'))
           .pipe(copy('./fs/boot/', {prefix: 3}));
 
     var copyNode = gulp.src('lib-dist/lib/browser-node/browser-node.js')
+          .pipe(changed('./fs/usr/bin/'))
           .pipe(rename(function(path) { path.basename = 'node'; path.extname = ''; }))
           .pipe(gulp.dest('./fs/usr/bin/'));
 
     var copyBin = gulp.src('lib/bin/*.js')
+          .pipe(changed('./fs/usr/bin/'))
           .pipe(rename(function(path) { path.extname = ''; }))
           .pipe(addShebang('#!/usr/bin/env node\n'))
           .pipe(chmod(755))
           .pipe(gulp.dest('./fs/usr/bin/'));
 
     var copyLd = gulp.src('src/ld.js')
+          .pipe(changed('./fs/usr/bin/'))
           .pipe(rename(function(path) { path.extname = ''; }))
           .pipe(chmod(755))
           .pipe(gulp.dest('./fs/usr/bin/'));
@@ -482,6 +499,7 @@ function gulp_app_tasks (app_path) {
         return gulp.src([
             app_path+'/elements/**/*.ts',
         ])
+            .pipe(changed(app_path+'/elements', {extension: '.js'}))
             .pipe(project()).js
             .pipe(gulp.dest(app_path+'/elements'));
 
