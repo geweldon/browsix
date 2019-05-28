@@ -2190,7 +2190,7 @@ export class Task implements ITask {
 			this.kernel.fs.open(cmd, 'r', this.fileOpened.bind(this));
 			return;
 		} else if (isWasm(buf)) {
-			this.pendingArgs = ['/usr/bin/ld'].concat(this.pendingArgs);
+			this.pendingArgs = ['/usr/bin/ld', this.pendingExePath].concat(this.pendingArgs);
 			this.kernel.fs.open('/usr/bin/ld', 'r', this.fileOpened.bind(this));
 			return;
 		}
