@@ -70,7 +70,7 @@ namespace BrowsixTerminal {
 			// Newline
 			if (ev.keyCode == 13) {
 				this.terminal.writeln("");
-				this.line += '\r\n'
+				this.line += '\n'
 				if (this.stdin !== null) {
 					this.stdin.write(new Buffer(this.line), -1, (error: any) => {});
 				}
