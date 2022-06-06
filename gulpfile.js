@@ -131,6 +131,7 @@ function tsTask(subdir, options) {
     }));
 }
 
+
 gulp.task('copy-node-kernel', function() {
     return gulp.src([
         'node-modified/lib/binding/http_parser.js',
@@ -143,7 +144,6 @@ gulp.task('copy-node', function() {
     return gulp.src([
         'node/lib/internal/util.js',
         'node/lib/internal/freelist.js',
-        'node-modified/lib/binding/http_parser.js',
         'node-modified/lib/internal/child_process.js',
         'node/lib/_linklist.js',
         'node/lib/_stream_*.js',
@@ -184,6 +184,7 @@ gulp.task('copy-node', function() {
 // the kernel directly uses BrowserFS's typescript modules - we need
 // to explicitly exclude tests and the browserify main here to avoid
 // confusing tsc :\
+
 tsTask('kernel', {buildDeps: ['copy-node-kernel', 'copy-node']});
 tsTask('browser-node', {buildDeps: ['copy-node'], noBuffer: true});
 tsTask('bin');
