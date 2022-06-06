@@ -17,7 +17,7 @@ describe('echo a b c', function(): void {
 
 	let kernel: Kernel = null;
 
-	it('should boot', function(done: MochaDone): void {
+	it('should boot', function(done: Mocha.Done): void {
 		Boot('XmlHttpRequest', ['index.json', ROOT, true], function(err: any, freshKernel: Kernel): void {
 			expect(err).to.be.null;
 			expect(freshKernel).not.to.be.null;
@@ -26,7 +26,7 @@ describe('echo a b c', function(): void {
 		});
 	});
 
-	it('should run `echo a b c`', function(done: MochaDone): void {
+	it('should run `echo a b c`', function(done: Mocha.Done): void {
 		let stdout: string = '';
 		let stderr: string = '';
 		kernel.system('/usr/bin/echo a b   c', onExit, onStdout, onStderr);

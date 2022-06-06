@@ -1,11 +1,16 @@
 {
     "compilerOptions": {
-        "target": "es5",
+        "rootDir": ".",
+        "allowJs": true,
+        "target": "es2017",
         "module": "commonjs",
-	"declaration": true,
+        "skipLibCheck": true,
+	    "declaration": false,
         "noImplicitAny": true,
         "removeComments": true,
         "experimentalDecorators": true,
         "newLine": "LF"
-    }
+    },
+    "exclude": ["app-spec", "app", "examples", "fs", "gulp-plugins"]
+  
 }

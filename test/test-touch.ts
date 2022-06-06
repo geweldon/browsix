@@ -18,7 +18,7 @@ describe('touch /a', function(): void {
 	const B_CONTENTS = 'wishing you were here';
 	let kernel: Kernel = null;
 
-	it('should boot', function(done: MochaDone): void {
+	it('should boot', function(done: Mocha.Done): void {
 		Boot('XmlHttpRequest', ['index.json', ROOT, true], function(err: any, freshKernel: Kernel): void {
 			expect(err).to.be.null;
 			expect(freshKernel).not.to.be.null;
@@ -27,14 +27,14 @@ describe('touch /a', function(): void {
 		});
 	});
 
-	it('should create /b', function(done: MochaDone): void {
+	it('should create /b', function(done: Mocha.Done): void {
 		kernel.fs.writeFile('/b', B_CONTENTS, function(err: any): void {
 			expect(err).to.be.undefined;
 			done();
 		});
 	});
 
-	it('should run `touch /a`', function(done: MochaDone): void {
+	it('should run `touch /a`', function(done: Mocha.Done): void {
 		let stdout = '';
 		let stderr = '';
 		kernel.system('touch /a', onExit, onStdout, onStderr);
@@ -55,7 +55,7 @@ describe('touch /a', function(): void {
 			}
 		}
 	});
-	it('should read /a', function(done: MochaDone): void {
+	it('should read /a', function(done: Mocha.Done): void {
 		kernel.fs.readFile('/a', 'utf-8', function(err: any, contents: string): void {
 			expect(err).to.be.undefined;
 			expect(contents).to.equal('');
@@ -63,7 +63,7 @@ describe('touch /a', function(): void {
 		});
 	});
 
-	it('should have new timestamps', function(done: MochaDone): void {
+	it('should have new timestamps', function(done: Mocha.Done): void {
 		kernel.fs.stat('/a', function(err: any, stats: any): void {
 			expect(err).to.be.null;
 			let now = new Date();
@@ -73,7 +73,7 @@ describe('touch /a', function(): void {
 		});
 	});
 	/* this doesn't seem to work (code =1).  because it already exists and doesn't like to be touched?
-	it('should run `touch /b`', function(done: MochaDone): void {
+	it('should run `touch /b`', function(done: Mocha.Done): void {
 		kernel.system('touch /b', catExited);
 		function catExited(code: number, stdout: string, stderr: string): void {
 			try {

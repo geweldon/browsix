@@ -17,7 +17,7 @@ describe('nice -n 10 nice', function(): void {
 
 	let kernel: Kernel = null;
 
-	it('should boot', function(done: MochaDone): void {
+	it('should boot', function(done: Mocha.Done): void {
 		Boot('XmlHttpRequest', ['index.json', ROOT, true], function(err: any, freshKernel: Kernel): void {
 			expect(err).to.be.null;
 			expect(freshKernel).not.to.be.null;
@@ -26,7 +26,7 @@ describe('nice -n 10 nice', function(): void {
 		});
 	});
 
-	it('should run `nice -n 10 nice`', function(done: MochaDone): void {
+	it('should run `nice -n 10 nice`', function(done: Mocha.Done): void {
 		let stdout: string = '';
 		let stderr: string = '';
 		kernel.system('nice -n 10 nice', onExit, onStdout, onStderr);

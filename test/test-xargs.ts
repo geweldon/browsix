@@ -17,7 +17,7 @@ describe('xargs', function(): void {
 
 	let kernel: Kernel = null;
 
-	it('should boot', function(done: MochaDone): void {
+	it('should boot', function(done: Mocha.Done): void {
 		Boot('XmlHttpRequest', ['index.json', ROOT, true], function(err: any, freshKernel: Kernel): void {
 			expect(err).to.be.null;
 			expect(freshKernel).not.to.be.null;
@@ -26,7 +26,7 @@ describe('xargs', function(): void {
 		});
 	});
 
-	it('should split on "," and pass max 2 args to COMMAND with a char limit of 13 on 1,12,123,12,1,1234', function(done: MochaDone): void {
+	it('should split on "," and pass max 2 args to COMMAND with a char limit of 13 on 1,12,123,12,1,1234', function(done: Mocha.Done): void {
 		let stdout: string = '';
 		let stderr: string = '';
 		kernel.system('/usr/bin/echo 1,12,123,12,1,1234 | /usr/bin/xargs -n 2 -s 13 -d , -x', onExit, onStdout, onStderr);
@@ -48,7 +48,7 @@ describe('xargs', function(): void {
 		}
 	});
 
-	it('should split on "Bar" and limit the query to 8 chars, exit without printing if exceeded on "fooBarfooBarfooBarfoofooBarfoofoo"', function(done: MochaDone): void {
+	it('should split on "Bar" and limit the query to 8 chars, exit without printing if exceeded on "fooBarfooBarfooBarfoofooBarfoofoo"', function(done: Mocha.Done): void {
 		let stdout: string = '';
 		let stderr: string = '';
 		kernel.system('/usr/bin/echo fooBarfooBarfooBarfoofooBarfoofoo | /usr/bin/xargs -s 8 -d Bar -x', onExit, onStdout, onStderr);
@@ -70,7 +70,7 @@ describe('xargs', function(): void {
 			}
 		}
 	});
-	it('should be verbose and pass 2 args max on "foo bar foo"', function(done: MochaDone): void {
+	it('should be verbose and pass 2 args max on "foo bar foo"', function(done: Mocha.Done): void {
 		let stdout: string = '';
 		let stderr: string = '';
 		kernel.system('/usr/bin/echo foo bar foo | /usr/bin/xargs -n 2 -t', onExit, onStdout, onStderr);

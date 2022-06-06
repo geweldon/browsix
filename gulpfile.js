@@ -2,7 +2,11 @@
 
 var browserify = require('browserify');
 var gulp = require('gulp');
-var gutil = require('gulp-util');
+var debug = require('gulp-debug');
+//var gutil = require('gulp-util');
+var fancylog = require('fancy-log');
+var through2 = require('through2');
+var noop = () => through2.obj();
 var copy = require('gulp-copy');
 var rename = require('gulp-rename');
 var merge = require('merge2');
@@ -28,11 +32,14 @@ var historyApiFallback = require('connect-history-api-fallback');
 
 var addShebang = require('./gulp-plugins/add-shebang');
 
+var browserfsPath = require.resolve('browserfs-browsix-tmp');
+
 
 // don't do anything when seeing use of several node builtins -- we
 // handle this ourselves.
 var globalVars = {
     'RELEASE': function() { return 'false'; },
+    "BrowserFS": function() { return "require('" + browserfsPath + "')" },
     'buffer': function() { return 'require("browserfs-browsix-tmp").BFSRequire("buffer")'; },
     'Buffer': function() { return 'require("browserfs-browsix-tmp").BFSRequire("buffer").Buffer'; },
     'process': function() { return "" },
@@ -70,6 +77,7 @@ function project(extraLibs) {
 function tsPipeline(src, dst, extraLibs) {
     return function() {
         let build = gulp.src(src)
+            .pipe(debug({title: "TSP:All files"}))
             .pipe(changed(dst, {extension: '.js'}))
             .pipe(project(extraLibs));
 
@@ -94,9 +102,11 @@ function tsTask(subdir, options) {
 
     gulp.task('lint-'+subdir, function() {
         return gulp.src(['src/'+subdir+'/*.ts', 'src/'+subdir+'/*/*.ts'])
+            .pipe(debug({title: "lint input"}))
             .pipe(lint({
                 formatter: "verbose",
             }))
+            .pipe(debug({title: "lint output"}))
             .pipe(lint.report());
     });
 
@@ -104,7 +114,7 @@ function tsTask(subdir, options) {
     if (options.lint)
         buildDeps = buildDeps.concat(['lint-'+subdir]);
 
-    gulp.task('build-'+subdir, buildDeps, tsPipeline(sources, 'lib/'+subdir, options.extraLibs));
+    gulp.task('build-'+subdir, gulp.series(buildDeps, tsPipeline(sources, 'lib/'+subdir, options.extraLibs)));
 
     var globals = extend({}, globalVars);
     if (noGlobal)
@@ -114,7 +124,7 @@ function tsTask(subdir, options) {
         globals['Buffer'] = function() { return ""; };
     }
 
-    gulp.task('dist-'+subdir, ['build-'+subdir], function() {
+    gulp.task('dist-'+subdir, gulp.series('build-'+subdir, function() {
         var b = browserify({
             entries: ['./lib/'+subdir+'/'+subdir+'.js'],
             builtins: builtins,
@@ -124,11 +134,14 @@ function tsTask(subdir, options) {
 
         return b.bundle()
             .pipe(source('./lib/'+subdir+'/'+subdir+'.js'))
+            .pipe(debug({title: "browerify bundle stream"}))
             .pipe(changed('./lib-dist/'))
+            .pipe(debug({title: "browserify #changed"}))
             .pipe(buffer())
-            .on('error', gutil.log)
+            .pipe(debug({title: "browserify buffer step"}))
+            .on('error', fancylog)
             .pipe(gulp.dest('./lib-dist/'));
-    });
+    }));
 }
 
 gulp.task('copy-node-kernel', function() {
@@ -136,6 +149,7 @@ gulp.task('copy-node-kernel', function() {
         'node-modified/lib/binding/http_parser.js',
     ])
     .pipe(changed('./lib/kernel/'))
+    .pipe(debug({title: "copy-nd-kernel #changed"}))
     .pipe(copy('./lib/kernel/', {prefix: 3}));
 });
 
@@ -177,7 +191,9 @@ gulp.task('copy-node', function() {
         'node/lib/_http_server.js',
         'node/lib/http.js',
     ])
+    .pipe(debug({title: "copy-node #all"}))
     .pipe(changed('./lib/browser-node/'))
+    .pipe(debug({title: "copy-node #changed"}))
     .pipe(copy('./lib/browser-node/', {prefix: 2}));
 });
 
@@ -192,94 +208,101 @@ tsTask('hello-sync', {noGlobal: true});
 
 // create a lint task for browsix since it is removed by default during builds
 
-gulp.task('lint', ['lint-kernel', 'lint-browser-node', 'lint-bin', 'lint-syscall-api'], function() {
-    return gutil.noop();
-});
+gulp.task('lint', gulp.series('lint-kernel', 'lint-browser-node', 'lint-bin', 'lint-syscall-api', function() {
+    return noop();
+}));
 
 // next, we need to collect the various pieces we've built, and put
 // then in a sane directory hierarchy.  There is no dist step needed
 // for our binaries - they are self contained and meant to be run
 // directly from node or browser-node.
-gulp.task('build-fs-pre', ['dist-kernel', 'dist-browser-node', 'build-bin', 'dist-syscall-api'], function() {
+gulp.task('build-fs-pre', gulp.series('dist-kernel', 'dist-browser-node', 'build-bin', 'dist-syscall-api', function() {
 
     var copyKernel = gulp.src('lib-dist/lib/kernel/kernel.js')
           .pipe(changed('./fs/boot/'))
+          .pipe(debug({title: "copykernel"}))
           .pipe(copy('./fs/boot/', {prefix: 3}));
 
     var copyNode = gulp.src('lib-dist/lib/browser-node/browser-node.js')
           .pipe(changed('./fs/usr/bin/'))
+          .pipe(debug({title: "copyNode"}))
           .pipe(rename(function(path) { path.basename = 'node'; path.extname = ''; }))
           .pipe(gulp.dest('./fs/usr/bin/'));
 
     var copyBin = gulp.src('lib/bin/*.js')
           .pipe(changed('./fs/usr/bin/'))
+          .pipe(debug({title: "copyBin"}))
           .pipe(rename(function(path) { path.extname = ''; }))
+          .pipe(debug({title: "copyBin #rename"}))
           .pipe(addShebang('#!/usr/bin/env node\n'))
+          .pipe(debug({title: "copyBin #addShebang"}))
           .pipe(chmod(755))
-          .pipe(gulp.dest('./fs/usr/bin/'));
+          .pipe(debug({title: "copyBin #chmod"}))
+          .pipe(gulp.dest('./fs/usr/bin/'))
+          .pipe(debug({title: "copyBin output"}));
 
     var copyLd = gulp.src('src/ld.js')
           .pipe(changed('./fs/usr/bin/'))
+          .pipe(debug({title: "copyLd"}))
           .pipe(rename(function(path) { path.extname = ''; }))
           .pipe(chmod(755))
           .pipe(gulp.dest('./fs/usr/bin/'));
 
     return merge(copyKernel, copyNode, copyBin, copyLd);
-});
+}));
 
-gulp.task('build-fs', ['build-fs-pre'], function() {
+gulp.task('build-fs', gulp.series('build-fs-pre', function() {
 
     var copyDash1 = gulp.src('src/dash.js')
+          .pipe(debug({title: "copyDash1"}))
           .pipe(rename(function(path) { path.basename = 'sh'; path.extname = ''; }))
           .pipe(gulp.dest('./fs/bin/'));
 
     // FIXME: we should just look in 2 dirs on the path
     var copyDash2 = gulp.src('src/dash.js')
+          .pipe(debug({title: "copydash2"}))
           .pipe(rename(function(path) { path.basename = 'sh'; path.extname = ''; }))
           .pipe(gulp.dest('./fs/usr/bin/'));
 
     return merge(copyDash1, copyDash2);
-});
+}));
 
 // finally, we create an index.json file so that BrowserFS can see
 // everything in our nice hierarchy
-gulp.task('index-fs', ['build-fs'], function() {
-    return run('./xhrfs-index fs').exec()
-        .pipe(rename(function(path) {
-            path.basename = 'index';
-            path.extname = '.json';
-        }))
-        .pipe(gulp.dest('./fs'));
-});
+gulp.task('index-fs', gulp.series('build-fs', function() {
+    return run('./xhrfs-index fs > ./fs/index.json').exec();
+        //.pipe(gulp.dest('./fs/index.json'));
+    },function() {return run('chmod -R 755 ./fs/').exec();}));
 
-gulp.task('copy-dash', [], function() {
+gulp.task('copy-dash', gulp.series([], function() {
 
-});
+}));
 
-gulp.task('index-benchfs', [], function() {
+gulp.task('index-benchfs', gulp.series([], function() {
     return run('./xhrfs-index benchfs').exec()
         .pipe(rename(function(path) {
             path.basename = 'index';
             path.extname = '.json';
         }))
-        .pipe(gulp.dest('./benchfs'));
-});
+        .pipe(gulp.dest('./benchfs'))
+        .pipe(debug({title: "index.json"}));
+}));
 
-gulp.task('build-test', ['index-fs'], function() {
+gulp.task('build-test', gulp.series('index-fs', function() {
     return gulp.src('test/*.ts')
         .pipe(project()).js
         .pipe(gulp.dest('test'));
-});
+}));
 
-gulp.task('build-bench', ['index-benchfs'], function() {
+gulp.task('build-bench', gulp.series('index-benchfs', function() {
     return gulp.src('bench/*.ts')
         .pipe(project()).js
         .pipe(gulp.dest('bench'));
-});
+}));
 
 // we compile all our tests into a single javascript file because
 // that is how browserify likes to work :\
-gulp.task('dist-test', ['build-test'], function() {
+gulp.task('dist-test', gulp.series('build-test', function() {
     var testMain = './test/test-all.js';
     var b = browserify({
         entries: [testMain],
@@ -291,11 +314,11 @@ gulp.task('dist-test', ['build-test'], function() {
     return b.bundle()
         .pipe(source(testMain))
         .pipe(buffer())
-        .on('error', gutil.log)
+        .on('error', fancylog)
         .pipe(gulp.dest('./lib-dist/'));
-});
+}));
 
-gulp.task('dist-bench', ['build-bench', 'index-benchfs'], function() {
+gulp.task('dist-bench', gulp.series('build-bench', 'index-benchfs', function() {
     var testMain = './bench/bench.js';
     var b = browserify({
         entries: [testMain],
@@ -307,12 +330,12 @@ gulp.task('dist-bench', ['build-bench', 'index-benchfs'], function() {
     return b.bundle()
         .pipe(source(testMain))
         .pipe(buffer())
-        .on('error', gutil.log)
+        .on('error', fancylog)
         .pipe(gulp.dest('./lib-dist/'));
-});
+}));
 
 // this starts karma & rebuild everything on change
-gulp.task('test-browser', ['dist-test'], function(done) {
+gulp.task('test-browser', gulp.series('dist-test', function(done) {
     new karma.Server({
         configFile: __dirname + '/karma.conf.js',
         singleRun: false,
@@ -320,10 +343,10 @@ gulp.task('test-browser', ['dist-test'], function(done) {
     }, done).start();
 
     gulp.watch(['src/**/*.ts', 'test/*.ts'], ['dist-test']);
-});
+}));
 
 // this runs karma once, exiting gulp on completion or failure
-gulp.task('bench', ['dist-bench'], function(done) {
+gulp.task('bench', gulp.series('dist-bench', function(done) {
     new karma.Server({
         configFile: __dirname + '/karma.conf.js',
         singleRun: true,
@@ -341,16 +364,16 @@ gulp.task('bench', ['dist-bench'], function(done) {
             },
         ],
     }, done).start();
-});
+}));
 
 // this runs karma once, exiting gulp on completion or failure
-gulp.task('default', ['dist-test'], function(done) {
+gulp.task('default', gulp.series('dist-test', function(done) {
     new karma.Server({
         configFile: __dirname + '/karma.conf.js',
         singleRun: true,
         browsers: ['Firefox'],
     }, done).start();
-});
+}));
 
 // from this point on is the config for the Terminal web app, written
 // using Polymer.
@@ -407,120 +430,22 @@ var optimizeHtmlTask = function (src, dest) {
         .pipe($.size({title: 'html'}));
 };
 
-function gulp_app_tasks (app_path) {
-    // Compile and automatically prefix stylesheets
-    gulp.task(app_path+':styles', function () {
-        return styleTask('styles', ['**/*.css']);
-    });
-
-    gulp.task(app_path+':elements', [app_path+':build', app_path+':copy', app_path+':styles'], function () {
-        return styleTask('elements', ['**/*.css']);
-    });
-
-    // Optimize images
-    gulp.task(app_path+':images', function () {
-        return imageOptimizeTask(app_path+'/images/**/*', 'dist/images');
-    });
-
-    // Copy all files at the root level (app)
-    gulp.task(app_path+':copy', ['index-fs'], function () {
-        var app = gulp.src([
-            app_path+'/*',
-            '!'+app_path+'/test',
-            '!'+app_path+'/cache-config.json',
-        ], {
-            dot: true
-        }).pipe(gulp.dest('dist'));
-
-        var bower = gulp.src([
-            'bower_components/**/*'
-        ]).pipe(gulp.dest('dist/bower_components'));
-
-        var elements = gulp.src([
-            app_path+'/elements/**/*.html',
-            app_path+'/elements/**/*.css',
-            app_path+'/elements/**/*.js',
-        ])
-            .pipe(gulp.dest('dist/elements'));
-
-        var swBootstrap = gulp.src(['bower_components/platinum-sw/bootstrap/*.js'])
-            .pipe(gulp.dest('dist/elements/bootstrap'));
-
-        var swToolbox = gulp.src(['bower_components/sw-toolbox/*.js'])
-            .pipe(gulp.dest('dist/sw-toolbox'));
-
-        var vulcanized = gulp.src([app_path+'/elements/elements.html'])
-            .pipe($.rename('elements.vulcanized.html'))
-            .pipe(gulp.dest('dist/elements'));
-
-        var fs = gulp.src(['fs/**/*'])
-            .pipe(gulp.dest('dist/fs'));
-
-        var xterm = gulp.src(['node_modules/xterm/dist/**/*'])
-            .pipe(gulp.dest('dist/xterm'));
-
-        return merge(app, bower, elements, vulcanized, swBootstrap, swToolbox, fs, xterm)
-            .pipe($.size({title: 'copy'}));
-    });
-
-    // Copy web fonts to dist
-    gulp.task(app_path+':fonts', function () {
-        return gulp.src(['app/fonts/**'])
-            .pipe(gulp.dest('dist/fonts'))
-            .pipe($.size({title: 'fonts'}));
-    });
-
-    // Scan your HTML for assets & optimize them
-    gulp.task(app_path+':html', [app_path+':elements'], function () {
-        return optimizeHtmlTask(
-            [app_path+'/**/*.html', '!'+app_path+'app/{elements,test}/**/*.html'],
-            'dist');
-    });
-
-    // Vulcanize granular configuration
-    gulp.task(app_path+':vulcanize', [app_path+':images', app_path+':fonts', app_path+':html'], function () {
-        var DEST_DIR = 'dist/elements';
-        return gulp.src('dist/elements/elements.vulcanized.html')
-            .pipe($.vulcanize({
-                stripComments: true,
-                inlineCss: true,
-                inlineScripts: true
-            }))
-            .pipe(gulp.dest(DEST_DIR))
-            .pipe($.size({title: 'vulcanize'}));
-    });
-
-    // Clean output directory
-    gulp.task(app_path+':clean', function (cb) {
-        del(['.tmp', 'dist'], cb);
-    });
-
-    gulp.task(app_path+':build', ['index-fs'], function (cb) {
-        return gulp.src([
-            app_path+'/elements/**/*.ts',
-        ])
-            .pipe(changed(app_path+'/elements', {extension: '.js'}))
-            .pipe(project()).js
-            .pipe(gulp.dest(app_path+'/elements'));
-
-    });
-}
 
 gulp_app_tasks ('app');
 gulp_app_tasks ('app-spec');
 
-gulp.task ('copy-spec-bins', [], function (cb) {
+gulp.task ('copy-spec-bins', gulp.series([], function (cb) {
     return gulp.src (['spec-bins',]).pipe (gulp.dest ('fs/usr/bin/'));
-});
+}));
 
-gulp.task ('create-spec-dirs', [], function (cb) {
+gulp.task ('create-spec-dirs', gulp.series([], function (cb) {
     return gulp.src("*.js", {read:false}).pipe (gulp.dest ('fs/spec/cpu2006_asmjs/benchspec/CPU2006/'));
-});
+}));
 
-gulp.task ('browsix-spec', ['copy-spec-bins', 'create-spec-dirs', 'app-spec:build', 'app-spec:styles', 'app-spec:elements', 'app-spec:images']);
+gulp.task ('browsix-spec', gulp.series('copy-spec-bins', 'create-spec-dirs', 'app-spec:build', 'app-spec:styles', 'app-spec:elements', 'app-spec:images'));
 
 // Watch files for changes & reload
-gulp.task('serve', ['app:build', 'app:styles', 'app:elements', 'app:images'], function () {
+gulp.task('serve', gulp.series('app:build', 'app:styles', 'app:elements', 'app:images', function () {
     browserSync({
         port: 5000,
         notify: false,
@@ -550,16 +475,124 @@ gulp.task('serve', ['app:build', 'app:styles', 'app:elements', 'app:images'], fu
         }
     });
 
-    gulp.watch(['src/kernel/*.ts'], ['dist-kernel', reload]);
-    gulp.watch(['app/**/*.html'], reload);
-    gulp.watch(['app/styles/**/*.css'], ['app:styles', reload]);
-    gulp.watch(['app/elements/**/*.css'], ['app:elements', reload]);
-    gulp.watch(['app/{scripts,elements}/**/*.ts'], ['app:build']);
-    gulp.watch(['app/images/**/*'], reload);
-});
+    gulp.watch(['src/kernel/*.ts'], gulp.series('dist-kernel', reload));
+    gulp.watch(['app/**/*.html'], gulp.series(reload));
+    gulp.watch(['app/styles/**/*.css'], gulp.series('app:styles', reload));
+    gulp.watch(['app/elements/**/*.css'], gulp.series('app:elements', reload));
+    gulp.watch(['app/{scripts,elements}/**/*.ts'], gulp.series('app:build'));
+    gulp.watch(['app/images/**/*'], gulp.series(reload));
+}));
+
+function gulp_app_tasks (app_path) {
+
+    // Clean output directory
+    gulp.task(app_path+':clean', function (cb) {
+        del(['.tmp', 'dist'], cb);
+    });
+
+    gulp.task(app_path+':build', gulp.series('index-fs', function (cb) {
+        return gulp.src([
+            app_path+'/elements/**/*.ts',
+        ])
+            .pipe(changed(app_path+'/elements', {extension: '.js'}))
+            .pipe(project()).js
+            .pipe(gulp.dest(app_path+'/elements'));
+
+    }));
+
+        // Copy all files at the root level (app)
+        gulp.task(app_path+':copy', gulp.series('index-fs', function () {
+            var app = gulp.src([
+                app_path+'/*',
+                '!'+app_path+'/test',
+                '!'+app_path+'/cache-config.json',
+            ], {
+                dot: true
+            }).pipe(gulp.dest('dist'));
+    
+            var bower = gulp.src([
+                'bower_components/**/*'
+            ]).pipe(gulp.dest('dist/bower_components'));
+    
+            var elements = gulp.src([
+                app_path+'/elements/**/*.html',
+                app_path+'/elements/**/*.css',
+                app_path+'/elements/**/*.js',
+            ])
+                .pipe(gulp.dest('dist/elements'));
+    
+            var swBootstrap = gulp.src(['bower_components/platinum-sw/bootstrap/*.js'])
+                .pipe(gulp.dest('dist/elements/bootstrap'));
+    
+            var swToolbox = gulp.src(['bower_components/sw-toolbox/*.js'])
+                .pipe(gulp.dest('dist/sw-toolbox'));
+    
+            var vulcanized = gulp.src([app_path+'/elements/elements.html'])
+                .pipe($.rename('elements.vulcanized.html'))
+                .pipe(gulp.dest('dist/elements'));
+    
+            var fs = gulp.src(['fs/**/*'])
+                .pipe(gulp.dest('dist/fs'));
+    
+            var xterm = gulp.src(['node_modules/xterm/dist/**/*'])
+                .pipe(gulp.dest('dist/xterm'));
+    
+            return merge(app, bower, elements, vulcanized, swBootstrap, swToolbox, fs, xterm)
+                .pipe($.size({title: 'copy'}));
+        }));
+
+    // Compile and automatically prefix stylesheets
+    gulp.task(app_path+':styles', function () {
+        return styleTask('styles', ['**/*.css']);
+    });
+
+    gulp.task(app_path+':elements', gulp.series(app_path+':build', app_path+':copy', app_path+':styles', function () {
+        return styleTask('elements', ['**/*.css']);
+    }));
+
+    // Optimize images
+    gulp.task(app_path+':images', function () {
+        return imageOptimizeTask(app_path+'/images/**/*', 'dist/images');
+    });
+
+
+
+    // Copy web fonts to dist
+    gulp.task(app_path+':fonts', function () {
+        return gulp.src(['app/fonts/**'])
+            .pipe(gulp.dest('dist/fonts'))
+            .pipe($.size({title: 'fonts'}));
+    });
+
+    // Scan your HTML for assets & optimize them
+    gulp.task(app_path+':html', gulp.series(app_path+':elements', function () {
+        return optimizeHtmlTask(
+            [app_path+'/**/*.html', '!'+app_path+'app/{elements,test}/**/*.html'],
+            'dist');
+    }));
+
+    // Vulcanize granular configuration
+    gulp.task(app_path+':vulcanize', gulp.series(app_path+':images', app_path+':fonts', app_path+':html', function () {
+        var DEST_DIR = 'dist/elements';
+        return gulp.src('dist/elements/elements.vulcanized.html')
+            .pipe($.vulcanize({
+                stripComments: true,
+                inlineCss: true,
+                inlineScripts: true
+            }))
+            .pipe(gulp.dest(DEST_DIR))
+            .pipe($.size({title: 'vulcanize'}));
+    }));
+
+
+}
+
+// Build production files, the default task
+gulp.task('build:dist', gulp.series('app:vulcanize'));
+
 
 // Build and serve the output from the dist build
-gulp.task('serve:dist', ['build:dist'], function () {
+gulp.task('serve:dist', gulp.series('build:dist', function () {
     browserSync({
         port: 5001,
         notify: false,
@@ -579,7 +612,6 @@ gulp.task('serve:dist', ['build:dist'], function () {
         server: 'dist',
         middleware: [ historyApiFallback() ]
     });
-});
+}));
 
-// Build production files, the default task
-gulp.task('build:dist', ['app:vulcanize']);
+

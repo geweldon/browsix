@@ -19,7 +19,7 @@ describe('sh "/usr/bin/cat /a /b | /usr/bin/head"', function(): void {
 	const B_CONTENTS = 'wish you were here';
 	let kernel: Kernel = null;
 
-	it('should boot', function(done: MochaDone): void {
+	it('should boot', function(done: Mocha.Done): void {
 		Boot('XmlHttpRequest', ['index.json', ROOT, true], function(err: any, freshKernel: Kernel): void {
 			expect(err).to.be.null;
 			expect(freshKernel).not.to.be.null;
@@ -28,21 +28,21 @@ describe('sh "/usr/bin/cat /a /b | /usr/bin/head"', function(): void {
 		});
 	});
 
-	it('should create /a', function(done: MochaDone): void {
+	it('should create /a', function(done: Mocha.Done): void {
 		kernel.fs.writeFile('/a', A_CONTENTS, function(err: any): void {
 			expect(err).to.be.undefined;
 			done();
 		});
 	});
 
-	it('should create /b', function(done: MochaDone): void {
+	it('should create /b', function(done: Mocha.Done): void {
 		kernel.fs.writeFile('/b', B_CONTENTS, function(err: any): void {
 			expect(err).to.be.undefined;
 			done();
 		});
 	});
 
-	it('should run `sh cat /a /b | cat`', function(done: MochaDone): void {
+	it('should run `sh cat /a /b | cat`', function(done: Mocha.Done): void {
 		let stdout = '';
 		let stderr = '';
 		kernel.system('/usr/bin/cat /a /b | cat', onExit, onStdout, onStderr);

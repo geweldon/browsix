@@ -19,7 +19,7 @@ describe('grep /a /b', function(): void {
 	const B_CONTENTS = 'the past plate\npassed last.';
 	let kernel: Kernel = null;
 
-	it('should boot', function(done: MochaDone): void {
+	it('should boot', function(done: Mocha.Done): void {
 		Boot('XmlHttpRequest', ['index.json', ROOT, true], function(err: any, freshKernel: Kernel): void {
 			expect(err).to.be.null;
 			expect(freshKernel).not.to.be.null;
@@ -28,21 +28,21 @@ describe('grep /a /b', function(): void {
 		});
 	});
 
-	it('should create /a', function(done: MochaDone): void {
+	it('should create /a', function(done: Mocha.Done): void {
 		kernel.fs.writeFile('/a', A_CONTENTS, function(err: any): void {
 			expect(err).to.be.undefined;
 			done();
 		});
 	});
 
-	it('should create /b', function(done: MochaDone): void {
+	it('should create /b', function(done: Mocha.Done): void {
 		kernel.fs.writeFile('/b', B_CONTENTS, function(err: any): void {
 			expect(err).to.be.undefined;
 			done();
 		});
 	});
 
-	it('should run `grep past /a /b`', function(done: MochaDone): void {
+	it('should run `grep past /a /b`', function(done: Mocha.Done): void {
 		let stdout: string = '';
 		let stderr: string = '';
 		kernel.system('/usr/bin/grep past /a /b', onExit, onStdout, onStderr);

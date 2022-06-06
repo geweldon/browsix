@@ -18,7 +18,7 @@ describe('rmdir /a', function(): void {
 	const A_CONTENTS = 'contents of a';
 	let kernel: Kernel = null;
 
-	it('should boot', function(done: MochaDone): void {
+	it('should boot', function(done: Mocha.Done): void {
 		Boot('XmlHttpRequest', ['index.json', ROOT, true], function(err: any, freshKernel: Kernel): void {
 			expect(err).to.be.null;
 			expect(freshKernel).not.to.be.null;
@@ -27,14 +27,14 @@ describe('rmdir /a', function(): void {
 		});
 	});
 
-	it('should create /a', function(done: MochaDone): void {
+	it('should create /a', function(done: Mocha.Done): void {
 		kernel.fs.mkdir('/a', function(err: any): void {
 			expect(err).to.be.undefined;
 			done();
 		});
 	});
 
-	it('should run `rmdir /a`', function(done: MochaDone): void {
+	it('should run `rmdir /a`', function(done: Mocha.Done): void {
 		let stdout = '';
 		let stderr = '';
 		kernel.system('/usr/bin/rmdir /a', onExit, onStdout, onStderr);
@@ -55,7 +55,7 @@ describe('rmdir /a', function(): void {
 			}
 		}
 	});
-	it('should remove /a', function(done: MochaDone): void {
+	it('should remove /a', function(done: Mocha.Done): void {
 		kernel.fs.stat('/a', function(err: any): void {
 			expect(err);
 			done();

@@ -18,7 +18,7 @@ describe('echo a b c', function(): void {
 
 	let kernel: Kernel = null;
 
-	it('should boot', function(done: MochaDone): void {
+	it('should boot', function(done: Mocha.Done): void {
 		Boot('XmlHttpRequest', ['index.json', ROOT, true], function(err: any, freshKernel: Kernel): void {
 			expect(err).to.be.null;
 			expect(freshKernel).not.to.be.null;
@@ -27,7 +27,7 @@ describe('echo a b c', function(): void {
 		});
 	});
 
-	it('should run `exec /usr/bin/echo hi`', function(done: MochaDone): void {
+	it('should run `exec /usr/bin/echo hi`', function(done: Mocha.Done): void {
 		let stdout: string = '';
 		let stderr: string = '';
 		kernel.system('/usr/bin/exec /usr/bin/echo hi', onExit, onStdout, onStderr);
@@ -49,7 +49,7 @@ describe('echo a b c', function(): void {
 		}
 	});
 
-	it('should run `exec echo hi`', function(done: MochaDone): void {
+	it('should run `exec echo hi`', function(done: Mocha.Done): void {
 		let stdout: string = '';
 		let stderr: string = '';
 		kernel.system('/usr/bin/exec echo hi', onExit, onStdout, onStderr);
@@ -71,7 +71,7 @@ describe('echo a b c', function(): void {
 		}
 	});
 
-	it('should fail `system /non/existent/cmd`', function(done: MochaDone): void {
+	it('should fail `system /non/existent/cmd`', function(done: Mocha.Done): void {
 		let stdout: string = '';
 		let stderr: string = '';
 		kernel.system('/non/existent/cmd', onExit, onStdout, onStderr);

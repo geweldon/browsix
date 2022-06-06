@@ -18,7 +18,7 @@ describe('head /a', function(): void {
 	const A_CONTENTS = 'line 1\nline 2\nline 3\nline 4\nline 5\nline 6\nline 7\nline 8\nline 9\nline 10\nline 11\n';
 	let kernel: Kernel = null;
 
-	it('should boot', function(done: MochaDone): void {
+	it('should boot', function(done: Mocha.Done): void {
 		Boot('XmlHttpRequest', ['index.json', ROOT, true], function(err: any, freshKernel: Kernel): void {
 			expect(err).to.be.null;
 			expect(freshKernel).not.to.be.null;
@@ -27,14 +27,14 @@ describe('head /a', function(): void {
 		});
 	});
 
-	it('should create /a', function(done: MochaDone): void {
+	it('should create /a', function(done: Mocha.Done): void {
 		kernel.fs.writeFile('/a', A_CONTENTS, function(err: any): void {
 			expect(err).to.be.undefined;
 			done();
 		});
 	});
 
-	it('should run `head /a`', function(done: MochaDone): void {
+	it('should run `head /a`', function(done: Mocha.Done): void {
 		let stdout: string = '';
 		let stderr: string = '';
 		kernel.system('/usr/bin/head /a', onExit, onStdout, onStderr);
