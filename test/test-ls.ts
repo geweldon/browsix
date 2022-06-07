@@ -17,7 +17,7 @@ describe('ls /boot', function(): void {
 
 	let kernel: Kernel = null;
 
-	it('should boot', function(done: MochaDone): void {
+	it('should boot', function(done: Mocha.Done): void {
 		Boot('XmlHttpRequest', ['index.json', ROOT, true], function(err: any, freshKernel: Kernel): void {
 			expect(err).to.be.null;
 			expect(freshKernel).not.to.be.null;
@@ -26,10 +26,10 @@ describe('ls /boot', function(): void {
 		});
 	});
 
-	it('should run `ls /boot`', function(done: MochaDone): void {
+	it('should run `ls /boot`', function(done: Mocha.Done): void {
 		let stdout = '';
 		let stderr = '';
-		kernel.system('/usr/bin/ls /boot', onExit, onStdout, onStderr);
+		kernel.system('/usr/bin/ls /boot', onExit, onStdout, onStderr, onHaveStdin);
 		function onStdout(pid: number, out: string): void {
 			stdout += out;
 		}
@@ -46,12 +46,15 @@ describe('ls /boot', function(): void {
 				done(e);
 			}
 		}
+		function onHaveStdin(stdin: any): void {
+			this.stdin = stdin;
+		}
 	});
 
-	it('should NOT run `ls -w`', function(done: MochaDone): void {
+	it('should NOT run `ls -w`', function(done: Mocha.Done): void {
 		let stdout = '';
 		let stderr = '';
-		kernel.system('/usr/bin/ls -w', onExit, onStdout, onStderr);
+		kernel.system('/usr/bin/ls -w', onExit, onStdout, onStderr, onHaveStdin);
 		function onStdout(pid: number, out: string): void {
 			stdout += out;
 		}
@@ -67,6 +70,9 @@ describe('ls /boot', function(): void {
 			} catch (e) {
 				done(e);
 			}
+		}
+		function onHaveStdin(stdin: any): void {
+			this.stdin = stdin;
 		}
 	});
 });

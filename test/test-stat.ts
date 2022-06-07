@@ -18,7 +18,7 @@ describe('stat /a', function(): void {
 	const A_CONTENTS = 'contents of a';
 	let kernel: Kernel = null;
 
-	it('should boot', function(done: MochaDone): void {
+	it('should boot', function(done: Mocha.Done): void {
 		Boot('XmlHttpRequest', ['index.json', ROOT, true], function(err: any, freshKernel: Kernel): void {
 			expect(err).to.be.null;
 			expect(freshKernel).not.to.be.null;
@@ -27,17 +27,17 @@ describe('stat /a', function(): void {
 		});
 	});
 
-	it('should create /a', function(done: MochaDone): void {
+	it('should create /a', function(done: Mocha.Done): void {
 		kernel.fs.writeFile('/a', A_CONTENTS, function(err: any): void {
 			expect(err).to.be.undefined;
 			done();
 		});
 	});
 
-	it('should run `stat /a`', function(done: MochaDone): void {
+	it('should run `stat /a`', function(done: Mocha.Done): void {
 		let stdout = '';
 		let stderr = '';
-		kernel.system('/usr/bin/stat /a', onExit, onStdout, onStderr);
+		kernel.system('/usr/bin/stat /a', onExit, onStdout, onStderr, onHaveStdin);
 		function onStdout(pid: number, out: string): void {
 			stdout += out;
 		}
@@ -53,6 +53,9 @@ describe('stat /a', function(): void {
 			expect(size).to.equal('13');
 			expect(stderr).to.equal('');
 			done();
+		}
+		function onHaveStdin(stdin: any): void {
+			this.stdin = stdin;
 		}
 	});
 });

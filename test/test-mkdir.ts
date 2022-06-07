@@ -18,7 +18,7 @@ describe('mkdir /a', function(): void {
 	const A_CONTENTS = 'contents of a';
 	let kernel: Kernel = null;
 
-	it('should boot', function(done: MochaDone): void {
+	it('should boot', function(done: Mocha.Done): void {
 		Boot('XmlHttpRequest', ['index.json', ROOT, true], function(err: any, freshKernel: Kernel): void {
 			expect(err).to.be.null;
 			expect(freshKernel).not.to.be.null;
@@ -27,10 +27,10 @@ describe('mkdir /a', function(): void {
 		});
 	});
 
-	it('should run `mkdir /a`', function(done: MochaDone): void {
+	it('should run `mkdir /a`', function(done: Mocha.Done): void {
 		let stdout = '';
 		let stderr = '';
-		kernel.system('mkdir /a', onExit, onStdout, onStderr);
+		kernel.system('mkdir /a', onExit, onStdout, onStderr, onHaveStdin);
 		function onStdout(pid: number, out: string): void {
 			stdout += out;
 		}
@@ -47,8 +47,11 @@ describe('mkdir /a', function(): void {
 				done(e);
 			}
 		}
+		function onHaveStdin(stdin: any): void {
+			this.stdin = stdin;
+		}
 	});
-	it('should have /a', function(done: MochaDone): void {
+	it('should have /a', function(done: Mocha.Done): void {
 		kernel.fs.stat('/a', function(err: any, stat: any): void {
 			expect(err).to.be.null;
 			expect(stat).not.to.be.null;
@@ -56,10 +59,10 @@ describe('mkdir /a', function(): void {
 		});
 	});
 
-	it('should run `mkdir -p /b/c/d e  f/g/h`', function(done: MochaDone): void {
+	it('should run `mkdir -p /b/c/d e  f/g/h`', function(done: Mocha.Done): void {
 		let stdout = '';
 		let stderr = '';
-		kernel.system('mkdir -p /b/c/d e  f/g/h', onExit, onStdout, onStderr);
+		kernel.system('mkdir -p /b/c/d e  f/g/h', onExit, onStdout, onStderr, onHaveStdin);
 		function onStdout(pid: number, out: string): void {
 			stdout += out;
 		}
@@ -76,11 +79,14 @@ describe('mkdir /a', function(): void {
 				done(e);
 			}
 		}
+		function onHaveStdin(stdin: any): void {
+			this.stdin = stdin;
+		}
 	});
-	it('should error out on `mkdir -p`', function(done: MochaDone): void {
+	it('should error out on `mkdir -p`', function(done: Mocha.Done): void {
 		let stdout = '';
 		let stderr = '';
-		kernel.system('mkdir -p', onExit, onStdout, onStderr);
+		kernel.system('mkdir -p', onExit, onStdout, onStderr, onHaveStdin);
 		function onStdout(pid: number, out: string): void {
 			stdout += out;
 		}
@@ -97,22 +103,25 @@ describe('mkdir /a', function(): void {
 				done(e);
 			}
 		}
+		function onHaveStdin(stdin: any): void {
+			this.stdin = stdin;
+		}
 	});
-	it('should have /b/c/d', function(done: MochaDone): void {
+	it('should have /b/c/d', function(done: Mocha.Done): void {
 		kernel.fs.stat('/b/c/d', function(err: any, stat: any): void {
 			expect(err).to.be.null;
 			expect(stat).not.to.be.null;
 			done();
 		});
 	});
-	it('should have a', function(done: MochaDone): void {
+	it('should have a', function(done: Mocha.Done): void {
 		kernel.fs.stat('/a', function(err: any, stat: any): void {
 			expect(err).to.be.null;
 			expect(stat).not.to.be.null;
 			done();
 		});
 	});
-	it('should have f/g/h', function(done: MochaDone): void {
+	it('should have f/g/h', function(done: Mocha.Done): void {
 		kernel.fs.stat('/f/g/h', function(err: any, stat: any): void {
 			expect(err).to.be.null;
 			expect(stat).not.to.be.null;

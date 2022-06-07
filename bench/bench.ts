@@ -83,14 +83,14 @@ function describeBenchmark(benchmark: any): void {
 
 
 	if (benchmark.remote_cmd) {
-		it(benchmark.name + ' server-task', function(done: MochaDone): void {
+		it(benchmark.name + ' server-task', function(done: Mocha.Done): void {
 			kernel.once('port:3962', () => { done(); });
 			kernel.system(benchmark.remote_cmd, onExit, nullOut, nullOut);
 			function onExit(pid: number, code: number): void {}
 		});
 	}
 
-	it(benchmark.name + ' calibrate', function(done: MochaDone): void {
+	it(benchmark.name + ' calibrate', function(done: Mocha.Done): void {
 		let cmd = benchmark.cmd.replace('%d', 0);
 		let stdout: string = '';
 
@@ -108,7 +108,7 @@ function describeBenchmark(benchmark: any): void {
 		}
 	});
 
-	it(benchmark.name + ' run ' + iterations + ' times', function(done: MochaDone): void {
+	it(benchmark.name + ' run ' + iterations + ' times', function(done: Mocha.Done): void {
 		let cmd = benchmark.cmd.replace('%d', iterations);
 		let run = 0;
 
@@ -136,7 +136,7 @@ function describeBenchmark(benchmark: any): void {
 describe('syscall', function(): void {
 	this.timeout(10 * MINS);
 
-	it('should boot', function(done: MochaDone): void {
+	it('should boot', function(done: Mocha.Done): void {
 		Boot(
 			'XmlHttpRequest',
 			['index.json', ROOT, true],

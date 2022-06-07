@@ -1,6 +1,6 @@
 'use strict';
 
-import { syscall, USyscalls, SyscallCallback, SyscallResponse } from '../browser-node/syscall';
+import { syscall, USyscalls, SyscallResponse } from '../browser-node/syscall';
 import { syscallTbl } from './table';
 
 export interface SyscallCallback {

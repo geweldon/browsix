@@ -1,9 +1,12 @@
 {
     "compilerOptions": {
-        "target": "es5",
+        "target": "es2017",
         "module": "commonjs",
+        "allowJs": false,
+        "rootDir": ".",
+        "skipLibCheck": true,
 	"declaration": true,
-        "noImplicitAny": true,
+        "noImplicitAny": false,
         "removeComments": true,
         "experimentalDecorators": true,
         "newLine": "LF"

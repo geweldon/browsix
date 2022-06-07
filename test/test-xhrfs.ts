@@ -19,7 +19,7 @@ describe('find /bin/node', function(): void {
 
 	let kernel: Kernel = null;
 
-	it('should boot', function(done: MochaDone): void {
+	it('should boot', function(done: Mocha.Done): void {
 		Boot('XmlHttpRequest', ['index.json', ROOT, true], function(err: any, freshKernel: Kernel): void {
 			expect(err).to.be.null;
 			expect(freshKernel).not.to.be.null;
@@ -28,7 +28,7 @@ describe('find /bin/node', function(): void {
 		});
 	});
 
-	it('should open /usr/bin/node', function(done: MochaDone): void {
+	it('should open /usr/bin/node', function(done: Mocha.Done): void {
 		kernel.fs.open('/usr/bin/node', 'r', nodeOpened);
 		function nodeOpened(err: any, fd: any): void {
 			try {

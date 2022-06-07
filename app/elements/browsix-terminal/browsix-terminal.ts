@@ -1,4 +1,9 @@
+/// <reference path="./types.ts" />
 /// <reference path="../../../node_modules/xterm/typings/xterm.d.ts"/>
+
+import { Terminal } from "xterm";
+import { IKernel } from "./types";
+
 
 //import { Terminal } from 'xterm';
 
@@ -10,11 +15,31 @@ interface OutputCallback {
 	(pid: number, output: string): void;
 }
 
-interface Kernel {
-	fs: any;
-	system(cmd: string, onExit: ExitCallback, onStdout: OutputCallback, onStderr: OutputCallback): void;
-	kill(pid: number): void;
+export interface StdinCallback {
+	(stdin: IFile): void;
 }
+
+export interface IFile {
+	port?: number;
+	addr?: string;
+
+	write(buf: Buffer, pos: number, cb: (err: any, len?: number) => void): void;
+	read(buf: Buffer, pos: number, cb: (err: any, len?: number) => void): void;
+	stat(cb: (err: any, stats: any) => void): void;
+	llseek(offhi: number, offlo: number, whence: number, cb: (err: number, off: number) => void): void;
+	readdir(cb: (err: any, files: string[]) => void): void;
+
+	ref(): void;
+	unref(): void;
+}
+
+//interface Kernel {
+//	fs: any;
+//	system(cmd: string, onExit: ExitCallback, onStdout: OutputCallback, onStderr: OutputCallback, onHaveStdin: StdinCallback): void;
+//	kill(pid: number): void;
+//}
+
+
 
 namespace BrowsixTerminal {
 	'use strict';
@@ -22,7 +47,7 @@ namespace BrowsixTerminal {
 	const ERROR = 'FLAGRANT SYSTEM ERROR';
 
 	class BrowsixTerminal {
-		kernel: Kernel;
+		kernel: IKernel;
 		stdin: any;
 		terminal: Terminal;
 		line: string = "";
@@ -39,7 +64,7 @@ namespace BrowsixTerminal {
 			(<any>window).Boot(
 				'XmlHttpRequest',
 				['index.json', 'fs', true],
-				(err: any, k: Kernel) => {
+				(err: any, k: IKernel) => {
 					if (err) {
 						console.log(err);
 						this.terminal.clear();

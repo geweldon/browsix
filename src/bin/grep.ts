@@ -89,7 +89,7 @@ function grep(pattern: string, inputs: NodeJS.ReadableStream[], output: NodeJS.W
 	if (!current) {
 		// use setTimeout to avoid a deep stack as well as
 		// cooperatively yield
-		setTimeout(grep, pattern, 0, inputs, output, code);
+		setTimeout(grep, 0, pattern, inputs, output, code);
 		return;
 	}
 

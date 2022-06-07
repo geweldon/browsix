@@ -2,6 +2,7 @@
 
 var browserify = require('browserify');
 var gulp = require('gulp');
+var debug = require('gulp-debug')
 var gutil = require('gulp-util');
 var copy = require('gulp-copy');
 var rename = require('gulp-rename');
@@ -245,13 +246,13 @@ gulp.task('build-fs', gulp.series('build-fs-pre', function() {
 // finally, we create an index.json file so that BrowserFS can see
 // everything in our nice hierarchy
 gulp.task('index-fs', gulp.series('build-fs', function() {
-    return run('./xhrfs-index fs').exec()
-        .pipe(rename(function(path) {
-            path.basename = 'index';
-            path.extname = '.json';
-        }))
-        .pipe(gulp.dest('./fs'));
-}));
+    return run('./xhrfs-index fs > ./fs/index.json').exec()
+        //.pipe(rename(function(path) {
+        //    path.basename = 'index';
+        //    path.extname = '.json';
+        //}))
+        //.pipe(gulp.dest('./fs'));
+},function() {return run('chmod -R 755 ./fs/').exec();}));
 
 gulp.task('copy-dash', gulp.series([], function() {
 

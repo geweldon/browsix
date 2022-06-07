@@ -17,7 +17,7 @@ describe('echo hi | tee /a', function(): void {
 
 	let kernel: Kernel = null;
 
-	it('should boot', function(done: MochaDone): void {
+	it('should boot', function(done: Mocha.Done): void {
 		Boot('XmlHttpRequest', ['index.json', ROOT, true], function(err: any, freshKernel: Kernel): void {
 			expect(err).to.be.null;
 			expect(freshKernel).not.to.be.null;
@@ -26,10 +26,10 @@ describe('echo hi | tee /a', function(): void {
 		});
 	});
 
-	it('should run `echo hi | tee`', function(done: MochaDone): void {
+	it('should run `echo hi | tee`', function(done: Mocha.Done): void {
 		let stdout: string = '';
 		let stderr: string = '';
-		kernel.system('echo hi | tee', onExit, onStdout, onStderr);
+		kernel.system('echo hi | tee', onExit, onStdout, onStderr, onHaveStdin);
 		function onStdout(pid: number, out: string): void {
 			stdout += out;
 		}
@@ -46,12 +46,15 @@ describe('echo hi | tee /a', function(): void {
 				done(e);
 			}
 		}
+		function onHaveStdin(stdin: any): void {
+			this.stdin = stdin;
+		}
 	});
 
-	it('should run `echo hi | tee`', function(done: MochaDone): void {
+	it('should run `echo hi | tee`', function(done: Mocha.Done): void {
 		let stdout: string = '';
 		let stderr: string = '';
-		kernel.system('echo hi | tee /greeting', onExit, onStdout, onStderr);
+		kernel.system('echo hi | tee /greeting', onExit, onStdout, onStderr, onHaveStdin);
 		function onStdout(pid: number, out: string): void {
 			stdout += out;
 		}
@@ -68,9 +71,12 @@ describe('echo hi | tee /a', function(): void {
 				done(e);
 			}
 		}
+		function onHaveStdin(stdin: any): void {
+			this.stdin = stdin;
+		}
 	});
 
-	it('should read /greeting', function(done: MochaDone): void {
+	it('should read /greeting', function(done: Mocha.Done): void {
 		kernel.fs.readFile('/greeting', 'utf-8', function(err: any, contents: string): void {
 			expect(err).to.be.undefined;
 			expect(contents).to.equal('hi\n');

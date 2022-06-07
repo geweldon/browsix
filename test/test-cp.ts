@@ -18,7 +18,7 @@ describe('cp', function(): void {
 
     let kernel: Kernel = null;
 
-    it('should boot', function(done: MochaDone): void {
+    it('should boot', function(done: Mocha.Done): void {
         Boot('XmlHttpRequest', ['index.json', ROOT, true], function(err: any, freshKernel: Kernel): void {
             expect(err).to.be.null;
             expect(freshKernel).not.to.be.null;
@@ -27,10 +27,10 @@ describe('cp', function(): void {
         });
     });
 
-    it('should throw error when no file operand is given `cp`', function(done: MochaDone): void {
+    it('should throw error when no file operand is given `cp`', function(done: Mocha.Done): void {
         let stdout = '';
         let stderr = '';
-        kernel.system('cp', onExit, onStdout, onStderr);
+        kernel.system('cp', onExit, onStdout, onStderr, onHaveStdin);
         function onStdout(pid: number, out: string): void {
             stdout += out;
         }
@@ -47,6 +47,9 @@ describe('cp', function(): void {
                 done(e);
             }
         }
+        function onHaveStdin(stdin: any): void {
+			this.stdin = stdin;
+		}
     });
 });
 
@@ -56,7 +59,7 @@ describe('cp /a', function(): void {
     const A_CONTENTS = 'contents of a';
     let kernel: Kernel = null;
 
-    it('should boot', function(done: MochaDone): void {
+    it('should boot', function(done: Mocha.Done): void {
         Boot('XmlHttpRequest', ['index.json', ROOT, true], function(err: any, freshKernel: Kernel): void {
             expect(err).to.be.null;
             expect(freshKernel).not.to.be.null;
@@ -65,10 +68,10 @@ describe('cp /a', function(): void {
         });
     });
 
-    it('should throw error when file doesn\'t and destination is missing `cp /a`', function(done: MochaDone): void {
+    it('should throw error when file doesn\'t and destination is missing `cp /a`', function(done: Mocha.Done): void {
         let stdout = '';
         let stderr = '';
-        kernel.system('cp /a', onExit, onStdout, onStderr);
+        kernel.system('cp /a', onExit, onStdout, onStderr, onHaveStdin);
         function onStdout(pid: number, out: string): void {
             stdout += out;
         }
@@ -85,19 +88,22 @@ describe('cp /a', function(): void {
                 done(e);
             }
         }
+        function onHaveStdin(stdin: any): void {
+			this.stdin = stdin;
+		}
     });
 
-    it('should create /a', function(done: MochaDone): void {
+    it('should create /a', function(done: Mocha.Done): void {
         kernel.fs.writeFile('/a', A_CONTENTS, function(err: any): void {
             expect(err).to.be.undefined;
             done();
         });
     });
 
-    it('should throw error when file exist but destination is missing `cp /a`', function (done:MochaDone):void {
+    it('should throw error when file exist but destination is missing `cp /a`', function (done:Mocha.Done):void {
         let stdout = '';
         let stderr = '';
-        kernel.system('cp /a', onExit, onStdout, onStderr);
+        kernel.system('cp /a', onExit, onStdout, onStderr, onHaveStdin);
         function onStdout(pid: number, out: string): void {
             stdout += out;
         }
@@ -114,6 +120,9 @@ describe('cp /a', function(): void {
                 done(e);
             }
         }
+        function onHaveStdin(stdin: any): void {
+			this.stdin = stdin;
+		}
     });
 });
 
@@ -124,7 +133,7 @@ describe('cp /a /b', function(): void {
     const B_CONTENTS = 'contents of b';
     let kernel: Kernel = null;
 
-    it('should boot', function(done: MochaDone): void {
+    it('should boot', function(done: Mocha.Done): void {
         Boot('XmlHttpRequest', ['index.json', ROOT, true], function(err: any, freshKernel: Kernel): void {
             expect(err).to.be.null;
             expect(freshKernel).not.to.be.null;
@@ -133,10 +142,10 @@ describe('cp /a /b', function(): void {
         });
     });
 
-    it('should throw error when file /a doesn\'t exist `cp /a /b`', function(done: MochaDone): void {
+    it('should throw error when file /a doesn\'t exist `cp /a /b`', function(done: Mocha.Done): void {
         let stdout = '';
         let stderr = '';
-        kernel.system('cp /a /b', onExit, onStdout, onStderr);
+        kernel.system('cp /a /b', onExit, onStdout, onStderr, onHaveStdin);
         function onStdout(pid: number, out: string): void {
             stdout += out;
         }
@@ -153,19 +162,22 @@ describe('cp /a /b', function(): void {
                 done(e);
             }
         }
+        function onHaveStdin(stdin: any): void {
+			this.stdin = stdin;
+		}
     });
 
-    it('should create /a', function(done: MochaDone): void {
+    it('should create /a', function(done: Mocha.Done): void {
         kernel.fs.writeFile('/a', A_CONTENTS, function(err: any): void {
             expect(err).to.be.undefined;
             done();
         });
     });
 
-    it('should run `cp /a /b`', function (done:MochaDone):void {
+    it('should run `cp /a /b`', function (done:Mocha.Done):void {
         let stdout = '';
         let stderr = '';
-        kernel.system('cp /a /b', onExit, onStdout, onStderr);
+        kernel.system('cp /a /b', onExit, onStdout, onStderr, onHaveStdin);
         function onStdout(pid: number, out: string): void {
             stdout += out;
         }
@@ -182,9 +194,12 @@ describe('cp /a /b', function(): void {
                 done(e);
             }
         }
+        function onHaveStdin(stdin: any): void {
+			this.stdin = stdin;
+		}
     });
 
-    it('should have /b', function(done: MochaDone): void {
+    it('should have /b', function(done: Mocha.Done): void {
         kernel.fs.stat('/b', function(err: any, stat: any): void {
             expect(err).to.be.null;
             expect(stat).not.to.be.null;
@@ -193,7 +208,7 @@ describe('cp /a /b', function(): void {
         });
     });
 
-    it('both files should have same content', function(done: MochaDone): void {
+    it('both files should have same content', function(done: Mocha.Done): void {
         kernel.fs.readFile('/b', 'utf-8', function(err: any, contents: string): void {
             expect(err).to.be.undefined;
             expect(contents).to.equal(A_CONTENTS);
@@ -201,7 +216,7 @@ describe('cp /a /b', function(): void {
         });
     });
 
-    it('should change the content of /a', function(done: MochaDone): void {
+    it('should change the content of /a', function(done: Mocha.Done): void {
         kernel.fs.writeFile('/a', B_CONTENTS, function(err: any): void {
             expect(err).to.be.undefined;
             kernel.fs.readFile('/a', 'utf-8', function(err: any, contents: string): void {
@@ -212,10 +227,10 @@ describe('cp /a /b', function(): void {
         });
     });
 
-    it('should run `cp /a /b` when /b exists and writable', function (done:MochaDone):void {
+    it('should run `cp /a /b` when /b exists and writable', function (done:Mocha.Done):void {
         let stdout = '';
         let stderr = '';
-        kernel.system('cp /a /b', onExit, onStdout, onStderr);
+        kernel.system('cp /a /b', onExit, onStdout, onStderr, onHaveStdin);
         function onStdout(pid: number, out: string): void {
             stdout += out;
         }
@@ -232,9 +247,12 @@ describe('cp /a /b', function(): void {
                 done(e);
             }
         }
+        function onHaveStdin(stdin: any): void {
+			this.stdin = stdin;
+		}
     });
 
-    it('should overwrite the contents of /b', function (done: MochaDone): void {
+    it('should overwrite the contents of /b', function (done: Mocha.Done): void {
         kernel.fs.readFile('/b', 'utf-8', function(err: any, contents: string): void {
             expect(err).to.be.undefined;
             expect(contents).to.equal(B_CONTENTS);
@@ -242,10 +260,10 @@ describe('cp /a /b', function(): void {
         });
     });
 
-    it('should throw error when src and dest are same `cp /a /a`', function (done:MochaDone):void {
+    it('should throw error when src and dest are same `cp /a /a`', function (done:Mocha.Done):void {
         let stdout = '';
         let stderr = '';
-        kernel.system('cp /a /a', onExit, onStdout, onStderr);
+        kernel.system('cp /a /a', onExit, onStdout, onStderr, onHaveStdin);
         function onStdout(pid: number, out: string): void {
             stdout += out;
         }
@@ -262,12 +280,15 @@ describe('cp /a /b', function(): void {
                 done(e);
             }
         }
+        function onHaveStdin(stdin: any): void {
+			this.stdin = stdin;
+		}
     });
 
-    it('should throw error when trying to copy in a directory that doesn\'t exists', function(done: MochaDone): void {
+    it('should throw error when trying to copy in a directory that doesn\'t exists', function(done: Mocha.Done): void {
         let stdout = '';
         let stderr = '';
-        kernel.system('cp /a c/', onExit, onStdout, onStderr);
+        kernel.system('cp /a c/', onExit, onStdout, onStderr, onHaveStdin);
         function onStdout(pid: number, out: string): void {
             stdout += out;
         }
@@ -284,12 +305,15 @@ describe('cp /a /b', function(): void {
                 done(e);
             }
         }
+        function onHaveStdin(stdin: any): void {
+			this.stdin = stdin;
+		}
     });
 
-    it('should throw error when trying to copy in a fs which is not a directory', function (done:MochaDone):void {
+    it('should throw error when trying to copy in a fs which is not a directory', function (done:Mocha.Done):void {
         let stdout = '';
         let stderr = '';
-        kernel.system('cp /a b/', onExit, onStdout, onStderr);
+        kernel.system('cp /a b/', onExit, onStdout, onStderr, onHaveStdin);
         function onStdout(pid: number, out: string): void {
             stdout += out;
         }
@@ -306,19 +330,22 @@ describe('cp /a /b', function(): void {
                 done(e);
             }
         }
+        function onHaveStdin(stdin: any): void {
+			this.stdin = stdin;
+		}
     });
 
-    it('should create a directory c/', function (done:MochaDone):void {
+    it('should create a directory c/', function (done:Mocha.Done):void {
         kernel.fs.mkdir('/c', function(err: any) {
             expect(err).not.to.be.undefined;
             done();
         });
     });
 
-    it('should run `cp /a c/`', function (done:MochaDone): void {
+    it('should run `cp /a c/`', function (done:Mocha.Done): void {
         let stdout = '';
         let stderr = '';
-        kernel.system('cp /a c/', onExit, onStdout, onStderr);
+        kernel.system('cp /a c/', onExit, onStdout, onStderr, onHaveStdin);
         function onStdout(pid: number, out: string): void {
             stdout += out;
         }
@@ -335,9 +362,12 @@ describe('cp /a /b', function(): void {
                 done(e);
             }
         }
+        function onHaveStdin(stdin: any): void {
+			this.stdin = stdin;
+		}
     });
 
-    it('should have /c/a', function (done:MochaDone):void {
+    it('should have /c/a', function (done:Mocha.Done):void {
        kernel.fs.stat('/c/a', function(err: any, stat: any): void {
            expect(err).to.be.null;
            expect(stat).not.to.be.null;
@@ -346,7 +376,7 @@ describe('cp /a /b', function(): void {
        });
     });
 
-    it('contents of /c/a and /a should be same', function (done:MochaDone):void {
+    it('contents of /c/a and /a should be same', function (done:Mocha.Done):void {
         kernel.fs.readFile('/c/a', 'utf-8', function(err: any, contents: string): void {
             expect(err).to.be.undefined;
             expect(contents).to.equal(B_CONTENTS);
@@ -354,10 +384,10 @@ describe('cp /a /b', function(): void {
         });
     });
 
-    it('should throw an error when the copying in a directory that does not exists', function (done:MochaDone):void {
+    it('should throw an error when the copying in a directory that does not exists', function (done:Mocha.Done):void {
         let stdout = '';
         let stderr = '';
-        kernel.system('cp /a d/b', onExit, onStdout, onStderr);
+        kernel.system('cp /a d/b', onExit, onStdout, onStderr, onHaveStdin);
         function onStdout(pid: number, out: string): void {
             stdout += out;
         }
@@ -374,12 +404,15 @@ describe('cp /a /b', function(): void {
                 done(e);
             }
         }
+        function onHaveStdin(stdin: any): void {
+			this.stdin = stdin;
+		}
     });
 
-    it('should throw an error when trying to copy a directory without -r', function (done:MochaDone): void {
+    it('should throw an error when trying to copy a directory without -r', function (done:Mocha.Done): void {
         let stdout = '';
         let stderr = '';
-        kernel.system('cp /c /d', onExit, onStdout, onStderr);
+        kernel.system('cp /c /d', onExit, onStdout, onStderr, onHaveStdin);
         function onStdout(pid: number, out: string): void {
             stdout += out;
         }
@@ -396,6 +429,9 @@ describe('cp /a /b', function(): void {
                 done(e);
             }
         }
+        function onHaveStdin(stdin: any): void {
+			this.stdin = stdin;
+		}
     });
 });
 
@@ -406,7 +442,7 @@ describe('cp /a /b /c', function(): void {
     const B_CONTENTS = 'contents of b';
     let kernel:Kernel = null;
 
-    it('should boot', function (done:MochaDone):void {
+    it('should boot', function (done:Mocha.Done):void {
         Boot('XmlHttpRequest', ['index.json', ROOT, true], function (err:any, freshKernel:Kernel):void {
             expect(err).to.be.null;
             expect(freshKernel).not.to.be.null;
@@ -415,24 +451,24 @@ describe('cp /a /b /c', function(): void {
         });
     });
 
-    it('should create /a', function(done: MochaDone): void {
+    it('should create /a', function(done: Mocha.Done): void {
         kernel.fs.writeFile('/a', A_CONTENTS, function(err: any): void {
             expect(err).to.be.undefined;
             done();
         });
     });
 
-    it('should create /b', function(done: MochaDone): void {
+    it('should create /b', function(done: Mocha.Done): void {
         kernel.fs.writeFile('/b', B_CONTENTS, function(err: any): void {
             expect(err).to.be.undefined;
             done();
         });
     });
 
-    it('should throw error when copying more than one files to non existing directory', function (done:MochaDone):void {
+    it('should throw error when copying more than one files to non existing directory', function (done:Mocha.Done):void {
         let stdout = '';
         let stderr = '';
-        kernel.system('cp /a /b /c', onExit, onStdout, onStderr);
+        kernel.system('cp /a /b /c', onExit, onStdout, onStderr, onHaveStdin);
         function onStdout(pid:number, out:string):void {
             stdout += out;
         }
@@ -451,19 +487,22 @@ describe('cp /a /b /c', function(): void {
                 done(e);
             }
         }
+        function onHaveStdin(stdin: any): void {
+			this.stdin = stdin;
+		}
     });
 
-    it('should create a directory c/', function (done:MochaDone):void {
+    it('should create a directory c/', function (done:Mocha.Done):void {
         kernel.fs.mkdir('/c', function(err: any) {
             expect(err).not.to.be.undefined;
             done();
         });
     });
 
-    it('should run `cp /a /b /c` when c is exiting directory', function (done:MochaDone):void {
+    it('should run `cp /a /b /c` when c is exiting directory', function (done:Mocha.Done):void {
         let stdout = '';
         let stderr = '';
-        kernel.system('cp /a /b /c', onExit, onStdout, onStderr);
+        kernel.system('cp /a /b /c', onExit, onStdout, onStderr, onHaveStdin);
         function onStdout(pid:number, out:string):void {
             stdout += out;
         }
@@ -482,9 +521,12 @@ describe('cp /a /b /c', function(): void {
                 done(e);
             }
         }
+        function onHaveStdin(stdin: any): void {
+			this.stdin = stdin;
+		}
     });
 
-    it('should have /c/a', function(done: MochaDone): void {
+    it('should have /c/a', function(done: Mocha.Done): void {
         kernel.fs.stat('/c/a', function(err: any, stat: any): void {
             expect(err).to.be.null;
             expect(stat).not.to.be.null;
@@ -493,7 +535,7 @@ describe('cp /a /b /c', function(): void {
         });
     });
 
-    it('should have /c/b', function(done: MochaDone): void {
+    it('should have /c/b', function(done: Mocha.Done): void {
         kernel.fs.stat('/c/b', function(err: any, stat: any): void {
             expect(err).to.be.null;
             expect(stat).not.to.be.null;
@@ -502,7 +544,7 @@ describe('cp /a /b /c', function(): void {
         });
     });
 
-    it('should have /b', function(done: MochaDone): void {
+    it('should have /b', function(done: Mocha.Done): void {
         kernel.fs.stat('/b', function(err: any, stat: any): void {
             expect(err).to.be.null;
             expect(stat).not.to.be.null;
@@ -511,7 +553,7 @@ describe('cp /a /b /c', function(): void {
         });
     });
 
-    it('/c/a should have same content as /a', function(done: MochaDone): void {
+    it('/c/a should have same content as /a', function(done: Mocha.Done): void {
         kernel.fs.readFile('/c/a', 'utf-8', function(err: any, contents: string): void {
             expect(err).to.be.undefined;
             expect(contents).to.equal(A_CONTENTS);
@@ -519,7 +561,7 @@ describe('cp /a /b /c', function(): void {
         });
     });
 
-    it('/c/b should have same content as /b', function(done: MochaDone): void {
+    it('/c/b should have same content as /b', function(done: Mocha.Done): void {
         kernel.fs.readFile('/c/b', 'utf-8', function(err: any, contents: string): void {
             expect(err).to.be.undefined;
             expect(contents).to.equal(B_CONTENTS);
